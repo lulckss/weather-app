@@ -71,45 +71,29 @@ function updateWeatherInfo(data) {
     wind: { speed },
   } = data;
 
-  // Atualiza as informações de clima atual
   document.querySelector(".local h4").textContent = city;
-  document.querySelector(
-    ".weather-summary-info h1"
-  ).textContent = `${Math.round(temp)}ºC`;
+  document.querySelector(".weather-summary-info h1").textContent = `${Math.round(temp)}ºC`;
   document.querySelector(".weather-summary-info h3").textContent = main;
-  document.querySelector(
-    ".condition-item:nth-child(1) h5:nth-child(2)"
-  ).textContent = `${humidity}%`;
-  document.querySelector(
-    ".condition-item:nth-child(2) h5:nth-child(2)"
-  ).textContent = `${speed} M/s`;
+  document.querySelector(".condition-item:nth-child(1) h5:nth-child(2)").textContent = `${humidity}%`;
+  document.querySelector(".condition-item:nth-child(2) h5:nth-child(2)").textContent = `${speed} M/s`;
 
-  // Atualiza a data atual
   const currentDate = new Date();
-  document.querySelector(".date-local").textContent =
-    currentDate.toLocaleDateString("en-GB", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
+  document.querySelector(".date-local").textContent = currentDate.toLocaleDateString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 
-  // Mapeamento de imagens de acordo com a condição climática pelo id
   const weatherIcon = getDataWet(id);
-  document.querySelector(
-    ".weather-img"
-  ).src = `./assets/weather/${weatherIcon}`;
+  document.querySelector(".weather-img").src = `./assets/weather/${weatherIcon}`;
 
-  // Exibir a seção de informações do tempo, mas não alterar a altura de forecast
   weatherInfoSection.style.display = "block";
   searchCitySection.style.display = "none";
   notFoundSection.style.display = "none";
 }
 
 function updateForecastInfo(data) {
-  // Atualiza apenas o conteúdo dentro da seção forecast, sem alterar o layout ou altura
   const dailyForecasts = getDailyForecasts(data.list);
-
-  // Limpa o conteúdo anterior, mas a altura permanece estática
   forecastContainer.innerHTML = "";
 
   dailyForecasts.forEach((forecast) => {
@@ -143,49 +127,31 @@ function getDailyForecasts(list) {
   list.forEach((item) => {
     const forecastDate = new Date(item.dt_txt);
 
-    // Verifica se o forecastDate é após o dia atual
-    if (
-      forecastDate.getDate() !== currentDate.getDate() &&
-      forecastDate > currentDate
-    ) {
+    if (forecastDate.getDate() !== currentDate.getDate() && forecastDate > currentDate) {
       const day = forecastDate.getDate();
+      const month = forecastDate.getMonth();
 
-      // Armazena a primeira previsão do dia (por exemplo, meio-dia)
-      if (!dailyForecastMap[day]) {
-        dailyForecastMap[day] = {
-          date: forecastDate.toLocaleDateString("en-US", {
-            day: "numeric",
-            month: "short",
-          }),
+      if (!dailyForecastMap[`${day}-${month}`] || forecastDate.getHours() === 12) {
+        dailyForecastMap[`${day}-${month}`] = {
+          date: forecastDate.toLocaleDateString("en-US", { day: "numeric", month: "short" }),
           temp: item.main.temp,
           weatherId: item.weather[0].id,
-        };
-      }
-
-      // Substitui se a previsão ao meio-dia estiver disponível
-      if (forecastDate.getHours() === 12) {
-        dailyForecastMap[day] = {
-          date: forecastDate.toLocaleDateString("en-US", {
-            day: "numeric",
-            month: "short",
-          }),
-          temp: item.main.temp,
-          weatherId: item.weather[0].id,
+          timestamp: forecastDate.getTime(),
         };
       }
     }
   });
 
-  // Converte o objeto de previsões diárias em uma lista
-  Object.keys(dailyForecastMap).forEach((key) => {
-    forecasts.push(dailyForecastMap[key]);
-  });
+  Object.values(dailyForecastMap)
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .forEach((forecast) => {
+      forecasts.push(forecast);
+    });
 
-  return forecasts.slice(0, 5); // Retorna previsões para 5 dias (a partir do próximo dia)
+  return forecasts.slice(0, 5);
 }
 
 function showNotFound() {
-  // Exibe a seção "not found"
   weatherInfoSection.style.display = "none";
   searchCitySection.style.display = "none";
   notFoundSection.style.display = "block";
